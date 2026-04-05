@@ -13,25 +13,39 @@ import './shared-styles.css';
 const LandingPage: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollWrapperRef = useRef<HTMLDivElement>(null);
+  const aboutCardRef = useRef<HTMLDivElement>(null);
 
-  // 1. Mouse Tracking for "The Thaw"
+  // 1. Mouse Tracking for "The Thaw" (Global for Hero)
   const mouseX = useMotionValue(350);
   const mouseY = useMotionValue(250);
 
   const springX = useSpring(mouseX, { stiffness: 100, damping: 25 });
   const springY = useSpring(mouseY, { stiffness: 100, damping: 25 });
 
+  // 1b. Mouse Tracking for "The Thaw" (Global for About)
+  const aboutMouseX = useMotionValue(450);
+  const aboutMouseY = useMotionValue(210);
+  const aboutSpringX = useSpring(aboutMouseX, { stiffness: 100, damping: 25 });
+  const aboutSpringY = useSpring(aboutMouseY, { stiffness: 100, damping: 25 });
+
   useEffect(() => {
     const handleGlobalMouseMove = (e: MouseEvent) => {
+      // Track for Hero (Segment 1)
       if (containerRef.current) {
         const rect = containerRef.current.getBoundingClientRect();
         mouseX.set(e.clientX - rect.left);
         mouseY.set(e.clientY - rect.top);
       }
+      // Track for About (Segment 5) - Global tracking even when off-card
+      if (aboutCardRef.current) {
+        const rect = aboutCardRef.current.getBoundingClientRect();
+        aboutMouseX.set(e.clientX - rect.left);
+        aboutMouseY.set(e.clientY - rect.top);
+      }
     };
     window.addEventListener('mousemove', handleGlobalMouseMove);
     return () => window.removeEventListener('mousemove', handleGlobalMouseMove);
-  }, [mouseX, mouseY]);
+  }, [mouseX, mouseY, aboutMouseX, aboutMouseY]);
 
   // 2. Scroll Animation Logic
   // Using absolute scrollY in pixels is 100% foolproof for cross-browser expansion
@@ -131,6 +145,7 @@ const LandingPage: React.FC = () => {
 
   // SEGMENT 4: HORIZONTAL SCROLL right-to-left
   const galleryTranslateX = useTransform(scrollY, [vh * 6.5, vh * 7.5, vh * 8.5, vh * 9.5], ['100%', '0%', '-100%', '-200%']);
+  const galleryOpacity = useTransform(scrollY, [vh * 6.3, vh * 6.5, vh * 9.5, vh * 9.7], [0, 1, 1, 0]);
   const panel1Opacity = 1;
   const panel2Opacity = 1;
   const panel3Opacity = 1;
@@ -140,16 +155,26 @@ const LandingPage: React.FC = () => {
   const game2X = 0; const game2Y = 0; const game2Rotate = 0; const game2Opacity = 1;
   const game3X = 0; const game3Y = 0; const game3Rotate = 0; const game3Opacity = 1;
 
-  // SEGMENT 5: CTA (Scroll: 9.5vh -> 11vh)
-  const ctaOpacity = useTransform(scrollY, [vh * 9.5, vh * 10.0], [0, 1]);
-  const ctaY = useTransform(scrollY, [vh * 9.5, vh * 10.0], [60, 0]);
+  // SEGMENT 5: ABOUT SECTION
+  const aboutOpacity = useTransform(scrollY, [vh * 9.5, vh * 9.8, vh * 11.2, vh * 11.5], [0, 1, 1, 0]);
+  const aboutY = useTransform(scrollY, [vh * 9.5, vh * 9.8], [60, 0]);
+  const aboutScale = useTransform(scrollY, [vh * 9.5, vh * 9.8], [1.5, 1]);
+  // Frost effect animates in slightly after the main card is fully shown
+  const frostOpacity = useTransform(scrollY, [vh * 9.9, vh * 10.3], [0, 0.85]);
+  
+  // 1c. Radius logic for About Card (Always-On during segment)
+  const aboutBlobRadius = useTransform(scrollY, [vh * 9.5, vh * 9.9, vh * 11.2, vh * 11.5], [0, 250, 250, 0]);
+
+  // SEGMENT 6: CTA (Scroll: 11.5vh -> 13vh)
+  const vh_cta = vh; 
+  const ctaOpacity = useTransform(scrollY, [vh_cta * 11.5, vh_cta * 12.0], [0, 1]);
+  const ctaY = useTransform(scrollY, [vh_cta * 11.5, vh_cta * 12.0], [60, 0]);
+
+  // Icicle growth logic (REMOVED)
 
   // Shared content inside the expanding container
   const ContentInner = ({ isWarm }: { isWarm: boolean }) => (
     <motion.div className="ui-inner" style={{ opacity: textOpacity }}>
-      <span className={`concept-tag ${isWarm ? 'tag-warm' : 'tag-frozen'}`}>
-        {isWarm ? "Spring's Warmth" : "Frozen Silence"}
-      </span>
       <h1 className={isWarm ? 'text-warm' : 'text-frozen'}>
         {isWarm ? "The Ice is Melting" : "The Village is Asleep"}
       </h1>
@@ -163,6 +188,67 @@ const LandingPage: React.FC = () => {
         The frozen landscape is beginning to breathe again.
       </p>
     </motion.div>
+  );
+
+
+  const AboutCardContent = () => (
+    <div className="about-card-horizontal about-spring">
+      <div className="creator-profile-outer">
+        <div className="creator-profile-glow glow-warm" />
+        <div className="creator-profile-img img-warm">
+          <img 
+            src="/Sung Jin Woo Purple Cropped.png" 
+            alt="Sufiyan Shiraj Mohammed profile" 
+            style={{ 
+              width: '100%', 
+              height: '100%', 
+              objectFit: 'cover',
+              filter: 'brightness(1.1) saturate(1.2)'
+            }} 
+          />
+        </div>
+      </div>
+
+      <div className="creator-content-right">
+        <div>
+          <span className="creator-label label-warm">Lead Developer</span>
+          <h4 className="creator-name name-warm">Sufiyan Shiraj Mohammed</h4>
+        </div>
+
+        <div className="social-links-row">
+          <a href="https://github.com/WrathLord935" target="_blank" rel="noreferrer" className="social-btn social-warm">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" /></svg>
+            GitHub
+          </a>
+          <a href="https://discord.gg/QWATFt6H" className="social-btn discord-btn social-warm">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152c-.0129-.001-.0258-.002-.0387-.003a.074.074 0 0 0-.0398.0401c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 0 0-.0785-.037 19.7363 19.7363 0 0 0-4.8852 1.515.0699.0699 0 0 0-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 0 0.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 0 0 .0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 0 0-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 0 1-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 0 1 .0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 0 1 .0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 0 1-.0066.1276 12.2986 12.2986 0 0 1-1.873.8914.0766.0766 0 0 0-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 0 0 .0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 0 0 .0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 0 0-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189Z" /></svg>
+            GitHub
+          </a>
+          <a href="https://discord.gg/QWATFt6H" className="social-btn discord-btn social-warm">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152c-.0129-.001-.0258-.002-.0387-.003a.074.074 0 0 0-.0398.0401c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 0 0-.0785-.037 19.7363 19.7363 0 0 0-4.8852 1.515.0699.0699 0 0 0-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 0 0.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 0 0 .0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 0 0-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 0 1-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 0 1 .0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 0 1 .0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 0 1-.0066.1276 12.2986 12.2986 0 0 1-1.873.8914.0766.0766 0 0 0-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 0 0 .0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 0 0 .0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 0 0-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189Z" /></svg>
+            Discord
+          </a>
+          <a href="https://www.instagram.com/sufiyan.shiraj" className="social-btn instagram-btn social-warm">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z" /></svg>
+            Instagram
+          </a>
+          <a href="https://www.linkedin.com/in/sufiyan.shiraj.mohammed" className="social-btn linkedin-btn social-warm">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" /></svg>
+            LinkedIn
+          </a>
+        </div>
+      </div>
+
+      {/* Hidden Treasures (Moved to main card scope) */}
+      <div className="leaf-accent leaf-1">🍃</div>
+      <div className="leaf-accent leaf-2">🌸</div>
+      <div className="leaf-accent leaf-3">✨</div>
+      <div className="leaf-accent leaf-4">🥚</div>
+      <div className="leaf-accent leaf-5">🐣</div>
+      <div className="leaf-accent leaf-6">🌷</div>
+      <div className="leaf-accent leaf-7">🌈</div>
+      <div className="leaf-accent leaf-8">🥚</div>
+    </div>
   );
 
   return (
@@ -185,7 +271,7 @@ const LandingPage: React.FC = () => {
             <ThawReveal
               winterSrc="/winter.png"
               springSrc="/spring.png"
-              thawRadius={80} // Precise image reveal
+              thawRadius={250} // Unified original reveal size
               persistence={0.99}
             />
           </div>
@@ -202,13 +288,29 @@ const LandingPage: React.FC = () => {
               }}
             >
 
-              {/* [LAYER 1]: Winter (Frozen Base - Vanishes) */}
+              {/* [LAYER 1]: Spring (Revealed Base - SIT BEHIND & GET MASKED) */}
+              <motion.div 
+                className="landing-content warm-layer"
+                style={{
+                  // Re-added mask to hide spring text outside the 'thaw' zone
+                  WebkitMaskImage: `radial-gradient(ellipse calc(var(--br) * 1.6px) calc(var(--br) * 1px) at calc(var(--mx) * 1px) calc(var(--my) * 1px), black 48%, transparent 52%)`,
+                  maskImage: `radial-gradient(ellipse calc(var(--br) * 1.6px) calc(var(--br) * 1px) at calc(var(--mx) * 1px) calc(var(--my) * 1px), black 48%, transparent 52%)`,
+                  // @ts-ignore
+                  "--mx": springX,
+                  "--my": springY,
+                  "--br": blobRadius,
+                }}
+              >
+                <ContentInner isWarm={true} />
+              </motion.div>
+
+              {/* [LAYER 2]: Winter (Frozen Base - SIT ON TOP & GET MASKED) */}
               <motion.div
                 className="landing-content frozen-layer vanish-mask"
                 style={{
                   // Sharp Binary Mask to eliminate ghosting
-                  WebkitMaskImage: `radial-gradient(circle calc(var(--br) * 1px) at calc(var(--mx) * 1px) calc(var(--my) * 1px), transparent 99%, black 100%)`,
-                  maskImage: `radial-gradient(circle calc(var(--br) * 1px) at calc(var(--mx) * 1px) calc(var(--my) * 1px), transparent 99%, black 100%)`,
+                  WebkitMaskImage: `radial-gradient(ellipse calc(var(--br) * 1.6px) calc(var(--br) * 1px) at calc(var(--mx) * 1px) calc(var(--my) * 1px), transparent 48%, black 52%)`,
+                  maskImage: `radial-gradient(ellipse calc(var(--br) * 1.6px) calc(var(--br) * 1px) at calc(var(--mx) * 1px) calc(var(--my) * 1px), transparent 48%, black 52%)`,
                   // @ts-ignore
                   "--mx": springX,
                   "--my": springY,
@@ -218,24 +320,100 @@ const LandingPage: React.FC = () => {
                 <ContentInner isWarm={false} />
               </motion.div>
 
-              {/* [LAYER 2]: Spring (Warm Reveal - Appears) */}
-              <motion.div
-                className="landing-content warm-layer reveal-mask"
-                style={{
-                  // Sharp Binary Mask ensures NO white text remains inside
-                  WebkitMaskImage: `radial-gradient(circle calc(var(--br) * 1px) at calc(var(--mx) * 1px) calc(var(--my) * 1px), black 99%, transparent 100%)`,
-                  maskImage: `radial-gradient(circle calc(var(--br) * 1px) at calc(var(--mx) * 1px) calc(var(--my) * 1px), black 99%, transparent 100%)`,
-                  // @ts-ignore
-                  "--mx": springX,
-                  "--my": springY,
-                  "--br": blobRadius,
-                }}
+              {/* [LAYER 3]: Segment 4 Gallery (Moves inside the box) */}
+              <motion.div 
+                className="horizontal-gallery-mask" 
+                style={{ opacity: galleryOpacity }}
               >
-                <ContentInner isWarm={true} />
+                <motion.div className="horizontal-gallery-track" style={{ x: galleryTranslateX }}>
+
+                  {/* PANEL 1: HANGMAN */}
+                  <motion.div className="gallery-panel" style={{ opacity: panel1Opacity }}>
+                    <div className="panel-content">
+                      <div className="panel-card">
+                        <div className="card-visual-bay">
+                          <motion.div
+                            className="gallery-object"
+                            style={{ x: game1X, y: game1Y, rotate: game1Rotate, opacity: game1Opacity }}
+                          >
+                            <Canvas camera={{ position: [0, 0, 5], fov: 40 }}>
+                              <ambientLight intensity={1.5} />
+                              <pointLight position={[10, 10, 10]} intensity={2} />
+                              <spotLight position={[-10, 10, 10]} angle={0.15} penumbra={1} intensity={2} />
+                              <HangmanModel />
+                              <Environment preset="city" />
+                              <ContactShadows position={[0, -1.2, 0]} opacity={0.6} scale={10} blur={2} far={10} />
+                            </Canvas>
+                          </motion.div>
+                        </div>
+                        <div className="card-text-area">
+                          <span className="game-label">Game 1: Hangman</span>
+                          <h3>Hanging by a Thread</h3>
+                          <p>"Guess the hidden Easter word before the figure is complete. Each wrong guess brings you closer to defeat. Think carefully—Jack's counting on you."</p>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+
+                  {/* PANEL 2: EASTER HUNT */}
+                  <motion.div className="gallery-panel" style={{ opacity: panel2Opacity }}>
+                    <div className="panel-content">
+                      <div className="panel-card">
+                        <div className="card-visual-bay">
+                          <motion.div
+                            className="gallery-object"
+                            style={{ x: game2X, y: game2Y, rotate: game2Rotate, opacity: game2Opacity }}
+                          >
+                            <Canvas camera={{ position: [0, 0, 5], fov: 35 }}>
+                              <ambientLight intensity={1.5} />
+                              <pointLight position={[10, 10, 10]} intensity={2} color="#ff9a9e" />
+                              <EggModel />
+                              <Environment preset="warehouse" />
+                              <ContactShadows position={[0, -1.2, 0]} opacity={0.6} scale={10} blur={2.5} far={10} />
+                            </Canvas>
+                          </motion.div>
+                        </div>
+                        <div className="card-text-area">
+                          <span className="game-label">Game 2: Easter Hunt</span>
+                          <h3>Eggs-traordinary Search</h3>
+                          <p>"Five eggs are hidden in the Easter Fair scene. Find them all before time runs out. Keep your eyes sharp—some eggs are harder to spot than others."</p>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+
+                  {/* PANEL 3: ICE EGG */}
+                  <motion.div className="gallery-panel" style={{ opacity: panel3Opacity }}>
+                    <div className="panel-content">
+                      <div className="panel-card">
+                        <div className="card-visual-bay">
+                          <motion.div
+                            className="gallery-object"
+                            style={{ x: game3X, y: game3Y, rotate: game3Rotate, opacity: game3Opacity }}
+                          >
+                            <Canvas camera={{ position: [0, 0, 5], fov: 35 }}>
+                              <ambientLight intensity={1} />
+                              <pointLight position={[10, 10, 10]} intensity={3} color="#a0d8ef" />
+                              <IceCubeModel />
+                              <Environment preset="night" />
+                              <ContactShadows position={[0, -1.2, 0]} opacity={0.8} scale={10} blur={2} far={10} />
+                            </Canvas>
+                          </motion.div>
+                        </div>
+                        <div className="card-text-area">
+                          <span className="game-label">Game 3: Ice Egg</span>
+                          <h3>Crack Under Pressure</h3>
+                          <p>"Melt the ice blocks to free the Easter eggs inside. But beware—some blocks contain bombs! You have 3 lives and 20 seconds. Choose wisely."</p>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+
+                </motion.div>
               </motion.div>
             </motion.div>
           </div>
-            
+
 
           {/* SEGMENT 2: THE FROZEN PADLOCK */}
           {/* This sits seamlessly over the expanded UI box and reacts to the user scrolling */}
@@ -317,100 +495,40 @@ const LandingPage: React.FC = () => {
             </motion.div>
           </div>
 
-          <div className="horizontal-gallery-mask">
-            <motion.div className="horizontal-gallery-track" style={{ x: galleryTranslateX }}>
-               
-               {/* PANEL 1: HANGMAN */}
-               <motion.div className="gallery-panel" style={{ opacity: panel1Opacity }}>
-                 <div className="panel-content">
-                    <div className="panel-card">
-                      <div className="card-visual-bay">
-                        <motion.div 
-                          className="gallery-object" 
-                          style={{ x: game1X, y: game1Y, rotate: game1Rotate, opacity: game1Opacity }} 
-                        >
-                          <Canvas camera={{ position: [0, 0, 5], fov: 40 }}>
-                            <ambientLight intensity={1.5} />
-                            <pointLight position={[10, 10, 10]} intensity={2} />
-                            <spotLight position={[-10, 10, 10]} angle={0.15} penumbra={1} intensity={2} />
-                            <HangmanModel />
-                            <Environment preset="city" />
-                            <ContactShadows position={[0, -1.2, 0]} opacity={0.6} scale={10} blur={2} far={10} />
-                          </Canvas>
-                        </motion.div>
-                      </div>
-                      <div className="card-text-area">
-                        <span className="game-label">Game 1: Hangman</span>
-                        <h3>Hanging by a Thread</h3>
-                        <p>"Guess the hidden Easter word before the figure is complete. Each wrong guess brings you closer to defeat. Think carefully—Jack's counting on you."</p>
-                      </div>
-                    </div>
-                 </div>
-               </motion.div>
-               
-               {/* PANEL 2: EASTER HUNT */}
-               <motion.div className="gallery-panel" style={{ opacity: panel2Opacity }}>
-                 <div className="panel-content">
-                    <div className="panel-card">
-                      <div className="card-visual-bay">
-                        <motion.div 
-                          className="gallery-object" 
-                          style={{ x: game2X, y: game2Y, rotate: game2Rotate, opacity: game2Opacity }} 
-                        >
-                          <Canvas camera={{ position: [0, 0, 5], fov: 35 }}>
-                            <ambientLight intensity={1.5} />
-                            <pointLight position={[10, 10, 10]} intensity={2} color="#ff9a9e" />
-                            <EggModel />
-                            <Environment preset="warehouse" />
-                            <ContactShadows position={[0, -1.2, 0]} opacity={0.6} scale={10} blur={2.5} far={10} />
-                          </Canvas>
-                        </motion.div>
-                      </div>
-                      <div className="card-text-area">
-                        <span className="game-label">Game 2: Easter Hunt</span>
-                        <h3>Eggs-traordinary Search</h3>
-                        <p>"Five eggs are hidden in the Easter Fair scene. Find them all before time runs out. Keep your eyes sharp—some eggs are harder to spot than others."</p>
-                      </div>
-                    </div>
-                 </div>
-               </motion.div>
 
-               {/* PANEL 3: ICE EGG */}
-               <motion.div className="gallery-panel" style={{ opacity: panel3Opacity }}>
-                 <div className="panel-content">
-                    <div className="panel-card">
-                      <div className="card-visual-bay">
-                        <motion.div 
-                          className="gallery-object" 
-                          style={{ x: game3X, y: game3Y, rotate: game3Rotate, opacity: game3Opacity }} 
-                        >
-                          <Canvas camera={{ position: [0, 0, 5], fov: 35 }}>
-                            <ambientLight intensity={1} />
-                            <pointLight position={[10, 10, 10]} intensity={3} color="#a0d8ef" />
-                            <IceCubeModel />
-                            <Environment preset="night" />
-                            <ContactShadows position={[0, -1.2, 0]} opacity={0.8} scale={10} blur={2} far={10} />
-                          </Canvas>
-                        </motion.div>
-                      </div>
-                      <div className="card-text-area">
-                        <span className="game-label">Game 3: Ice Egg</span>
-                        <h3>Crack Under Pressure</h3>
-                        <p>"Melt the ice blocks to free the Easter eggs inside. But beware—some blocks contain bombs! You have 3 lives and 20 seconds. Choose wisely."</p>
-                      </div>
-                    </div>
-                 </div>
-               </motion.div>
 
-            </motion.div>
-          </div>
+          {/* SEGMENT 5: ABOUT THE PROJECT */}
+          <motion.div className="about-segment" style={{ opacity: aboutOpacity, y: aboutY, scale: aboutScale }}>
+            <div 
+              ref={aboutCardRef}
+              className="about-card interactive-ice-card"
+            >
+              <div className="about-card-layer about-spring-base">
+                <AboutCardContent />
+              </div>
 
-          {/* SEGMENT 5: THE CTA */}
+              {/* [FROST OVERLAY]: Masked locally by mouse position */}
+              <motion.div
+                className="about-frost-overlay single-mask"
+                style={{
+                  opacity: frostOpacity,
+                  WebkitMaskImage: `radial-gradient(ellipse calc(var(--br) * 1.6px) calc(var(--br) * 1px) at calc(var(--mx) * 1px) calc(var(--my) * 1px), transparent 48%, black 52%)`,
+                  maskImage: `radial-gradient(ellipse calc(var(--br) * 1.6px) calc(var(--br) * 1px) at calc(var(--mx) * 1px) calc(var(--my) * 1px), transparent 48%, black 52%)`,
+                  // @ts-ignore
+                  "--mx": aboutSpringX,
+                  "--my": aboutSpringY,
+                  "--br": aboutBlobRadius,
+                }}
+              />
+            </div>
+          </motion.div>
+
+          {/* SEGMENT 6: THE CTA */}
           <motion.div className="cta-segment" style={{ opacity: ctaOpacity, y: ctaY }}>
             <p className="cta-overline">You've seen what's at stake.</p>
             <h2 className="cta-headline">Jack Frost is ready.<br />Are you?</h2>
             <p className="cta-subtext">Help Jack solve Easter's puzzles. Bring back the eggs. Save spring.</p>
-            <button className="play-btn">
+            <button className="play-btn" onClick={() => window.location.href = 'https://frost-bloom.vercel.app/fair'} style={{ pointerEvents: 'auto' }}>
               <span className="play-btn-icon">🐣</span>
               Begin the Easter Fair
             </button>
@@ -438,8 +556,10 @@ const LandingPage: React.FC = () => {
         }
 
         .horizontal-gallery-mask {
-          position: absolute;
-          inset: 0;
+          grid-area: 1 / 1;
+          width: 100%;
+          height: 100%;
+          position: relative;
           overflow: hidden;
           z-index: 50; 
           pointer-events: none;
@@ -603,6 +723,214 @@ const LandingPage: React.FC = () => {
           font-size: 1.5rem;
         }
 
+        /* ❄️ SEGMENT 5: ABOUT SECTION */
+        .about-segment {
+          position: absolute;
+          inset: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 55;
+          pointer-events: none;
+        }
+
+        .about-card {
+          position: relative;
+          width: 900px;
+          height: 420px;
+          border-radius: 40px;
+          box-shadow: 0 40px 120px rgba(0, 0, 0, 0.4);
+          pointer-events: auto;
+          overflow: hidden; 
+          background: rgba(15, 23, 42, 0.85); 
+          backdrop-filter: blur(20px); /* Significant card blur */
+          border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .about-card-layer {
+          position: absolute;
+          inset: 0;
+          padding: 60px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 1;
+        }
+
+        .about-frost-overlay {
+          position: absolute;
+          inset: 0;
+          pointer-events: none;
+          z-index: 10;
+          background: rgba(160, 216, 239, 0.6); /* Vibrant Blue Tint */
+          backdrop-filter: blur(50px); /* Massive Frost Blur */
+          opacity: 0.85; /* Initial opacity overwritten by motion transform */
+          border-radius: 40px;
+        }
+
+        .icicle-row-container {
+          position: absolute;
+          left: 0;
+          right: 0;
+          height: 120px;
+          z-index: 10;
+          pointer-events: none;
+        }
+
+        .top-row { top: -2px; }
+        .bottom-row { bottom: -2px; transform: scaleY(-1); }
+
+
+        .leaf-accent {
+          position: absolute;
+          font-size: 2rem;
+          pointer-events: none;
+          filter: drop-shadow(0 0 10px rgba(74, 222, 128, 0.5));
+          animation: leaf-float 5s infinite ease-in-out;
+        }
+
+        .leaf-1 { top: 5%; right: 10%; animation-delay: 0s; }
+        .leaf-2 { bottom: 8%; left: 5%; animation-delay: 2s; }
+        .leaf-3 { top: 12%; left: 35%; font-size: 1.5rem; animation-delay: 1s; }
+        .leaf-4 { top: 45%; left: 8%; font-size: 1.8rem; animation-delay: 0.5s; opacity: 0.8; }
+        .leaf-5 { bottom: 25%; right: 5%; font-size: 2.2rem; animation-delay: 1.5s; opacity: 0.9; }
+        .leaf-6 { bottom: 10%; left: 45%; font-size: 1.6rem; animation-delay: 0.8s; opacity: 0.7; }
+        .leaf-7 { bottom: 15%; right: 35%; font-size: 2.5rem; animation-delay: 2.5s; }
+        .leaf-8 { top: 8%; left: 15%; font-size: 1.9rem; animation-delay: 1.2s; opacity: 0.8; }
+
+        @keyframes leaf-float {
+          0%, 100% { transform: translate(0, 0) rotate(0deg); }
+          50% { transform: translate(5px, -10px) rotate(15deg); }
+        }
+
+        .about-card-horizontal {
+          position: relative;
+          z-index: 10;
+          display: flex;
+          align-items: center;
+          gap: 60px;
+          width: 100%;
+        }
+
+        .creator-profile-outer {
+          position: relative;
+          width: 180px;
+          height: 180px;
+          flex-shrink: 0;
+        }
+
+        .glow-warm {
+          background: radial-gradient(circle, rgba(74, 222, 128, 0.4) 0%, rgba(253, 230, 138, 0.1) 60%, transparent 75%);
+        }
+
+        .img-warm {
+          border: 3px solid #4ade80;
+          box-shadow: 0 10px 30px rgba(74, 222, 128, 0.3);
+        }
+
+        .label-warm { color: #4ade80; font-weight: 700; letter-spacing: 5px; } /* Bright green for dark bg */
+        .name-warm { color: #fff; font-weight: 800; } /* Pure white name */
+        .social-warm { background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.1); color: #cbd5e1; }
+        .social-warm:hover { background: rgba(74, 222, 128, 0.2); border-color: #4ade80; color: #fff; }
+
+        .creator-profile-glow {
+          position: absolute;
+          inset: -25px;
+          filter: blur(35px);
+          animation: profile-glow-pulse 6s infinite ease-in-out;
+        }
+
+        .creator-profile-img {
+          position: relative;
+          width: 100%;
+          height: 100%;
+          border-radius: 50%;
+          overflow: hidden;
+          background: #0f172a;
+          z-index: 2;
+        }
+
+        .creator-content-right {
+          flex-grow: 1;
+          text-align: left;
+          display: flex;
+          flex-direction: column;
+          gap: 24px;
+        }
+
+        .creator-label {
+          display: block;
+          font-family: 'Space Grotesk', sans-serif;
+          text-transform: uppercase;
+          letter-spacing: 4px;
+          font-size: 0.9rem;
+          color: #a0d8ef;
+          margin-bottom: -5px; /* Reduced negative margin to create a cleaner gap */
+          transform: translateY(-5px); /* Explicitly move title up */
+        }
+
+        .creator-name {
+          font-family: 'Space Grotesk', sans-serif;
+          font-size: 2.4rem;
+          font-weight: 700;
+          color: #fff;
+          margin: 0;
+          letter-spacing: -1px;
+          line-height: 1.1;
+        }
+
+        .social-links-row {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 16px;
+        }
+
+        .social-btn {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          padding: 12px 24px;
+          border-radius: 100px;
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          color: rgba(255, 255, 255, 0.7);
+          text-decoration: none;
+          font-family: 'Inter', sans-serif;
+          font-size: 0.9rem;
+          font-weight: 600;
+          transition: all 0.3s ease;
+        }
+
+        .social-btn svg {
+          width: 20px;
+          height: 20px;
+        }
+
+        .social-btn:hover {
+          background: rgba(186, 230, 253, 0.2);
+          border-color: rgba(186, 230, 253, 0.4);
+          color: #fff;
+          transform: translateY(-2px);
+        }
+
+        .discord-btn:hover {
+          background: #5865f233;
+          border-color: #5865f288;
+          color: #5865f2;
+        }
+
+        .instagram-btn:hover {
+          background: rgba(225, 48, 108, 0.2);
+          border-color: rgba(225, 48, 108, 0.5);
+          color: #E1306C;
+        }
+
+        .linkedin-btn:hover {
+          background: rgba(0, 119, 181, 0.2);
+          border-color: rgba(0, 119, 181, 0.5);
+          color: #0077b5;
+        }
+
         /* ☄️ THE BALLISTIC OBJECT */
         .gallery-object {
           position: absolute;
@@ -675,7 +1003,7 @@ const LandingPage: React.FC = () => {
         /* 🎢 SCROLL LOGIC */
         .scroll-trigger-area {
           position: relative;
-          height: 1100vh;
+          height: 1300vh;
           width: 100vw;
         }
 
@@ -726,6 +1054,13 @@ const LandingPage: React.FC = () => {
           flex-direction: column;
           justify-content: center;
           box-sizing: border-box;
+          mask-repeat: no-repeat;
+          -webkit-mask-repeat: no-repeat;
+          mask-size: 100% 100%;
+          -webkit-mask-size: 100% 100%;
+        }
+
+        .vanish-mask, .reveal-mask {
           mask-repeat: no-repeat;
           -webkit-mask-repeat: no-repeat;
           mask-size: 100% 100%;

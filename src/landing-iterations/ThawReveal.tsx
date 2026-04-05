@@ -118,14 +118,34 @@ const ThawReveal: React.FC<ThawRevealProps> = ({
           
           if (mouse.active) {
             ctx.globalAlpha = 1.0;
-            const scaledRadius = thawRadius * 0.5;
-            const grad = ctx.createRadialGradient(mouse.x, mouse.y, 0, mouse.x, mouse.y, scaledRadius);
+            
+            // 1. Get exact container dimensions
+            const w = containerRef.current?.clientWidth || 256;
+            const h = containerRef.current?.clientHeight || 256;
+            
+            // 2. Aspect correction math:
+            // The canvas (256x256) is stretched to fill W/H by the shader.
+            // To get a final 1.6:1 egg on screen, we draw with (1.6 * H / W) scale.
+            const targetAspect = 1.6;
+            const ellipseScaleX = targetAspect * (h / w);
+            
+            // Map the pixel thawRadius to the 256-unit canvas coordinate system
+            // We treat thawRadius as the vertical radius (syncing with CSS mask)
+            const verticalRadiusCanvas = (thawRadius / h) * 256 * 0.5;
+            
+            ctx.save();
+            ctx.translate(mouse.x, mouse.y);
+            ctx.scale(ellipseScaleX, 1.0); 
+            
+            const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, verticalRadiusCanvas);
             grad.addColorStop(0, '#fff');
             grad.addColorStop(1, 'rgba(255,255,255,0)');
             ctx.fillStyle = grad;
+            
             ctx.beginPath();
-            ctx.arc(mouse.x, mouse.y, scaledRadius, 0, Math.PI * 2);
+            ctx.arc(0, 0, verticalRadiusCanvas, 0, Math.PI * 2);
             ctx.fill();
+            ctx.restore();
           }
           maskTexture.needsUpdate = true;
       }
